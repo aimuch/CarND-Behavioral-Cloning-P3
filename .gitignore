@@ -1,7 +1,8 @@
 .ipynb_checkpoints/
-data1_anticlockwise/
-data1_clockwise/
+data_run1/
+data_run2/
 data2/
 run1/
 run2/
 windows_sim/
+gen_data.p
