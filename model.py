@@ -1,9 +1,9 @@
 
 # coding: utf-8
 
-
+# import libary
 import os
-from tqdm import tqdm
+import math
 import pandas as pd
 import numpy as np
 import matplotlib.image as mping
@@ -15,6 +15,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
 
 
+# import images data
 def getImagesAngles(csv_path):
     """
     Get center, left, right images and angles from csv_data
@@ -73,8 +74,6 @@ def combineImagesAngles(centerimages, leftimages, rightimages,angles, correction
 
 
 # Road 1
-
-
 csv_data1, centerimages1, leftimages1,rightimages1,angles1 = getImagesAngles("./data_run1/driving_log.csv") 
 print(np.shape(centerimages1))
 print(np.shape(leftimages1))
@@ -88,10 +87,7 @@ print(X_train1.shape)
 print(y_train1.shape)
 
 
-# Road 2 data
-
-
-
+# road 2 data
 csv_data2, centerimages2, leftimages2, rightimages2, angles2 = getImagesAngles("./data_run2/driving_log.csv") 
 print(np.shape(centerimages2))
 print(np.shape(leftimages2))
@@ -106,8 +102,6 @@ print(y_train2.shape)
 
 # Merge data
 
-
-
 X_train = np.concatenate((X_train1, X_train2))
 y_train = np.concatenate((y_train1, y_train2))
 print(X_train.shape)
@@ -115,7 +109,6 @@ print(y_train.shape)
 
 
 # Show left, center and right images
-
 
 def showviewpoint(leftimages, centerimages, rightimages, angles):
     index = np.random.randint(len(centerimages))
@@ -142,11 +135,11 @@ def showviewpoint(leftimages, centerimages, rightimages, angles):
     plt.yticks([])
     plt.xticks([])
 
+
 showviewpoint(leftimages1, centerimages1,rightimages1,angles1)
 
 
-# Augument Data
-
+# Define Augument Function
 import cv2
 from skimage.util import random_noise
 
@@ -180,7 +173,7 @@ def gaussian_noise(img,angle,mode='gaussian'):
 def image_fliplr(image, angle):
     return np.fliplr(image), angle*(-1)
     
-def projection_transform(image,angle,hlimit=80,wlimit=80):
+def shadow_transform(image,angle,hlimit=80,wlimit=80):
     """
     Randomly add projection on image
     
@@ -217,7 +210,7 @@ def image_shift(img,angle, shift_range = 100):
 def augument_images_process(batch_images,batch_angles,gammarate=0.5,blurrate=0.5,projectionrate=0.5,shiftrate=0.4):
     images = []
     angles = []
-    for img,angle in tqdm(zip(batch_images,batch_angles),total=len(batch_images)):
+    for img,angle in zip(batch_images,batch_angles):
         img_ = np.copy(img)
         angle_ = np.copy(angle)
         if(np.random.sample(1) < gammarate):
@@ -227,7 +220,7 @@ def augument_images_process(batch_images,batch_angles,gammarate=0.5,blurrate=0.5
             img_, angle_ = gaussian_blur(img_,angle_)
         
         if(np.random.sample(1) < projectionrate):
-            img_, angle_ = projection_transform(img_,angle_)
+            img_, angle_ = shadow_transform(img_,angle_)
             
         if(np.random.sample(1) < shiftrate):
             img_, angle_ = image_shift(img_,angle_)
@@ -248,7 +241,7 @@ def augument_images_process(batch_images,batch_angles,gammarate=0.5,blurrate=0.5
             img_, angle_ = gaussian_blur(img_,angle_)
         
         if(np.random.sample(1) < projectionrate):
-            img_, angle_ = projection_transform(img_,angle_)
+            img_, angle_ = shadow_transform(img_,angle_)
             
         if(np.random.sample(1) < shiftrate):
             img_, angle_ = image_shift(img_,angle_)
@@ -260,44 +253,210 @@ def augument_images_process(batch_images,batch_angles,gammarate=0.5,blurrate=0.5
     return np.array(images), np.array(angles)   
 
 
+# Test gamma_image function
+index1 = np.random.randint(len(X_train))
+test_X = X_train[index1]
+test_y = y_train[index1]
+X,_ = gamma_image(test_X, test_y)
+plt.figure(figsize=(16, 16))
+plt.subplot(1,2,1)
+plt.imshow(test_X)
+plt.title('Original Image')
+# plt.yticks([])
+# plt.xticks([])
+
+plt.subplot(1,2,2)
+plt.imshow(X)
+plt.title('Gamma Image')
+# plt.yticks([])
+# plt.xticks([])
+
+
+# Test gaussion_blur Function
+index1 = np.random.randint(len(X_train))
+test_X = X_train[index1]
+test_y = y_train[index1]
+X,_ = gaussian_blur(test_X, test_y)
+plt.figure(figsize=(16, 16))
+plt.subplot(1,2,1)
+plt.imshow(test_X)
+plt.title('Original Image')
+# plt.yticks([])
+# plt.xticks([])
+
+plt.subplot(1,2,2)
+plt.imshow(X)
+plt.title('Gaussion Blur Image')
+# plt.yticks([])
+# plt.xticks([])
+
+
+# Test gaussion_noise Function
+index1 = np.random.randint(len(X_train))
+test_X = X_train[index1]
+test_y = y_train[index1]
+X,_ = gaussian_noise(test_X, test_y)
+plt.figure(figsize=(16, 16))
+plt.subplot(1,2,1)
+plt.imshow(test_X)
+plt.title('Original Image')
+# plt.yticks([])
+# plt.xticks([])
+
+plt.subplot(1,2,2)
+plt.imshow(X)
+plt.title('Gaussion Noise Image')
+# plt.yticks([])
+# plt.xticks([])
+
+
+# Test image_fliplr Function
+index1 = np.random.randint(len(X_train))
+test_X = X_train[index1]
+test_y = y_train[index1]
+X,_ = image_fliplr(test_X, test_y)
+plt.figure(figsize=(16, 16))
+plt.subplot(1,2,1)
+plt.imshow(test_X)
+plt.title('Original Image')
+# plt.yticks([])
+# plt.xticks([])
+
+plt.subplot(1,2,2)
+plt.imshow(X)
+plt.title('Flip Image')
+# plt.yticks([])
+# plt.xticks([])
+
+
+# Test add shadow Funcion
+index1 = np.random.randint(len(X_train))
+test_X = X_train[index1]
+test_y = y_train[index1]
+X,_ = shadow_transform(test_X, test_y)
+plt.figure(figsize=(16, 16))
+plt.subplot(1,2,1)
+plt.imshow(test_X)
+plt.title('Original Image')
+# plt.yticks([])
+# plt.xticks([])
+
+plt.subplot(1,2,2)
+plt.imshow(X)
+plt.title('Shadow Image')
+# plt.yticks([])
+# plt.xticks([])
+
+
+# Test image_shift Function
+index1 = np.random.randint(len(X_train))
+test_X = X_train[index1]
+test_y = y_train[index1]
+X,_ = image_shift(test_X, test_y)
+plt.figure(figsize=(16, 16))
+plt.subplot(1,2,1)
+plt.imshow(test_X)
+plt.title('Original Image')
+# plt.yticks([])
+# plt.xticks([])
+
+plt.subplot(1,2,2)
+plt.imshow(X)
+plt.title('Shift Image')
+# plt.yticks([])
+# plt.xticks([])
+
+
+# Test augument_images_process Funcion
 index1 = np.random.randint(len(X_train))
 X,y = augument_images_process(X_train[index1:index1+10],y_train[index1:index1+10])
 plt.figure(figsize=(7,7))
 plt.imshow(X[np.random.randint(10)])
 
 
-X_train_processed,y_train_processed = augument_images_process(X_train,y_train)
-
-
-print(X_train_processed.shape)
-print(y_train_processed.shape)
-
-
-
-import pickle
-
-train_dataset_file = "gen_data.p"
-
-pickle.dump({
-        "features" : X_train_processed,
-        "labels" : y_train_processed
-    }, open(train_dataset_file, "wb" ),protocol=4)
-print("Generated data saved in", train_dataset_file)
-
-
-
-import pickle
-
-train_dataset_file = "gen_data.p"
-
-with open(train_dataset_file, mode='rb') as f:
-    gen_train = pickle.load(f)
+# Define cropping Function
+def crop_img(img,top_crop=70, bottom_crop=25,left_crop=0, right_crop=0):
+    """
+    Crop Image
     
-X_train, y_train = gen_train['features'], gen_train['labels']
-print("Number of training examples after augmenting and balancing training data =", X_train.shape[0])
+    Arguments:
+        img: array like data
+        top_crop: how much top rows should be cropped
+        bottom_crop: how much bottom rows should be cropped
+        left_crop: how much left cols should be cropped
+        right_crop: how much cols right should be cropped
+    """
+    row = img.shape[0]
+    col = img.shape[1]
+
+    print(img.shape)
+    plt.figure(figsize=(16, 8))
+    plt.subplot(2,2,1)
+    plt.imshow(img)
+    plt.title('Original Image')
+#     plt.yticks([])
+#     plt.xticks([])
+
+    plt.subplot(2,2,2)
+    plt.imshow(img[row-top_crop:row-bottom_crop, left_crop:col-right_crop])
+    plt.title('Focused Image')
+#     plt.yticks([])
+#     plt.xticks([])
+    
+    plt.subplot(2,2,3)
+    plt.imshow(img[:top_crop,left_crop:col-right_crop])
+    plt.title('Top Cropped Image')
+#     plt.yticks([])
+#     plt.xticks([])
+
+    plt.subplot(2,2,4)
+    plt.imshow(img[row-bottom_crop:, left_crop:col-right_crop])
+    plt.title('Bottom Cropped Image')
+#     plt.yticks([])
+#     plt.xticks([])
 
 
+crop_img(X_train[np.random.randint(1)])
 
+
+# Define Generator Function
+X_train,X_valid,y_train,y_valid = train_test_split(X_train, y_train, test_size=0.2, random_state=42)
+
+
+# The number of samples in the batch
+NUM_BATCH_SAMPLES = 64
+
+# The number of samples in the train set
+NUM_TRAIN_SAMPLES = len(X_train)
+# Train steps per epoch
+NUM_TRAIN_STEPS = math.ceil(NUM_TRAIN_SAMPLES/NUM_BATCH_SAMPLES)
+
+# The number of samples in the valid set
+NUM_VALID_SAMPLES = len(X_valid)
+# Valid steps per epoch
+NUM_VALID_STEPS = math.ceil(NUM_VALID_SAMPLES/NUM_BATCH_SAMPLES)
+
+
+def generator(images, angles, batch_size = NUM_BATCH_SAMPLES):
+    """
+    Generate the required images and angles for taining, the return batch size is double batch_size
+    """
+    num_samples = len(images)
+    while 1: 
+        for offset in range(0,num_samples,batch_size):
+            batch_images = images[offset:offset + batch_size]
+            batch_angles = angles[offset:offset + batch_size]
+            
+            inputs,outputs = augument_images_process(batch_images,batch_angles)
+            
+            yield inputs,outputs
+
+
+train_generator = generator(X_train,y_train)
+valid_generator = generator(X_valid,y_valid)
+
+
+# Model Architecture
 x = Input(shape=(160,320,3))
 y = Lambda(lambda x: x/250.0 - 0.5)(x)
 y = Cropping2D(cropping=((70,25),(0,0)))(y)
@@ -320,12 +479,12 @@ model = Model(inputs=x, outputs=y)
 model.summary()
 
 
-def trainModel(model=model, X_train=X_train, y_train=y_train, batch_size=128, epochs=50, lr=0.0005, patience=10, verbose=1, savefile='./model.h5'):
+def trainModel(model=model,train_generator=train_generator,valid_generator=valid_generator,batch_size=128, epochs=50, lr=0.0005, patience=10, verbose=1, savefile='./model.h5'):
     adam_optimizer = keras.optimizers.Adam(lr=lr)
     model.compile(optimizer=adam_optimizer,loss=keras.losses.mean_squared_error)
     earlystop = keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=0, patience=patience)
     
-    train_history = model.fit(X_train, y_train, batch_size=128, epochs=epochs, verbose=verbose, callbacks=[earlystop], validation_split=0.2, shuffle=True)
+    train_history = model.fit_generator(train_generator,steps_per_epoch=NUM_TRAIN_STEPS ,validation_data=valid_generator,validation_steps=NUM_VALID_STEPS,epochs=epochs, verbose=verbose, callbacks=[earlystop],shuffle=True)
     
     model.save(savefile)
     
@@ -339,15 +498,13 @@ def trainModel(model=model, X_train=X_train, y_train=y_train, batch_size=128, ep
     plt.show()
 
 
-trainModel(model,X_train,y_train,verbose=2)
-
+trainModel(model,train_generator,valid_generator,verbose=1)
 
 from keras.models import load_model
 
-def finetuneModel( X_train, y_train, lr=0.0001, verbose=2, loadfile='./model.h5'):
+def finetuneModel( train_generator,valid_generator, epochs, lr=0.0001, verbose=1, loadfile='./model.h5'):
     model = load_model(loadfile)
-    trainModel(model,X_train,y_train,lr=lr,verbose=verbose, savefile=loadfile)
+    trainModel(model,train_generator,valid_generator,epochs=epochs,lr=lr,verbose=verbose, savefile=loadfile)
 
-
-finetuneModel(X_train, y_train, lr=0.0001,verbose=2)
+finetuneModel(train_generator,valid_generator,epochs=10, lr=0.0001,verbose=1)
 
